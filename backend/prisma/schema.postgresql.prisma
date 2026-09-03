@@ -1,0 +1,57 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              String           @id @default(uuid())
+  googleId        String?          @unique
+  email           String           @unique
+  name            String
+  avatar          String?
+  slackWebhookUrl String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  campaigns       Campaign[]
+  scheduledEmails ScheduledEmail[]
+}
+
+model Campaign {
+  id              String           @id @default(uuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  senderEmail     String?
+  title           String
+  subject         String
+  body            String
+  delaySeconds    Int              @default(0)
+  hourlyLimit     Int              @default(50)
+  startTime       DateTime
+  totalLeads      Int              @default(0)
+  status          String           @default("SCHEDULED")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  scheduledEmails ScheduledEmail[]
+}
+
+model ScheduledEmail {
+  id                 String    @id @default(uuid())
+  campaignId         String
+  campaign           Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  senderEmail        String?
+  recipientEmail     String
+  status             String    @default("SCHEDULED")
+  scheduledAt        DateTime
+  sentAt             DateTime?
+  rescheduledCount   Int       @default(0)
+  etherealPreviewUrl String?
+  errorMessage       String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
