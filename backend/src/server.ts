@@ -11,7 +11,7 @@ import './queue/emailWorker';
 
 import { initElasticsearch } from './config/elasticsearch';
 import { googleLogin, getMe } from './controllers/authController';
-import { createCampaign, getScheduledEmails, getSentEmails } from './controllers/campaignController';
+import { createCampaign, getScheduledEmails, getSentEmails, deleteEmail } from './controllers/campaignController';
 import { searchEmails } from './controllers/searchController';
 import { updateSlackWebhook, testSlackWebhook, getSlackOAuthUrl, slackOAuthCallback } from './controllers/slackController';
 
@@ -54,6 +54,7 @@ app.get('/api/auth/me', getMe);
 app.post('/api/campaigns', createCampaign);
 app.get('/api/emails/scheduled', getScheduledEmails);
 app.get('/api/emails/sent', getSentEmails);
+app.delete('/api/emails/:id', deleteEmail);
 app.get('/api/emails/search', searchEmails);
 app.get('/api/search', searchEmails);
 

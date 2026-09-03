@@ -11,6 +11,7 @@ import {
   fetchSentEmails,
   searchEmails,
   createCampaign,
+  deleteScheduledEmail,
   setAuthUserId,
 } from '../services/api';
 
@@ -114,6 +115,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
     setCurrentView('detail');
   };
 
+  const handleDeleteEmail = async (emailId: string) => {
+    await deleteScheduledEmail(emailId);
+    if (selectedEmail?.id === emailId) {
+      setSelectedEmail(null);
+    }
+    await loadData();
+  };
+
   const currentEmails = searchQuery.trim()
     ? searchResults
     : activeTab === 'scheduled'
@@ -180,6 +189,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               setSelectedEmail(null);
               setCurrentView('list');
             }}
+            onDelete={handleDeleteEmail}
             darkMode={darkMode}
           />
         ) : (
@@ -192,6 +202,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onSearchChange={setSearchQuery}
             onRefresh={loadData}
             onSelectEmail={handleSelectEmail}
+            onDeleteEmail={handleDeleteEmail}
             searchSource={searchSource}
             darkMode={darkMode}
             onToggleDarkMode={onToggleDarkMode}

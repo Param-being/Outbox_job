@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ScheduledEmail } from '../types';
-import { Search, Filter, RefreshCw, Star, Clock, ExternalLink, Moon, Sun } from 'lucide-react';
+import { Search, Filter, RefreshCw, Star, Clock, ExternalLink, Trash2, Moon, Sun } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface EmailListViewProps {
@@ -11,6 +11,7 @@ interface EmailListViewProps {
   onSearchChange: (q: string) => void;
   onRefresh: () => void;
   onSelectEmail: (email: ScheduledEmail) => void;
+  onDeleteEmail?: (id: string) => Promise<void>;
   searchSource?: string | null;
   darkMode?: boolean;
   onToggleDarkMode?: () => void;
@@ -24,6 +25,7 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
   onSearchChange,
   onRefresh,
   onSelectEmail,
+  onDeleteEmail,
   searchSource,
   darkMode = false,
   onToggleDarkMode,
@@ -286,6 +288,25 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
                       }`}
                     />
                   </button>
+
+                  {onDeleteEmail && (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (window.confirm('Are you sure you want to delete this email?')) {
+                          await onDeleteEmail(email.id);
+                        }
+                      }}
+                      className={`p-1 transition-colors cursor-pointer rounded ${
+                        darkMode
+                          ? 'text-zinc-600 hover:text-rose-400 hover:bg-zinc-800'
+                          : 'text-gray-300 hover:text-rose-500 hover:bg-gray-100'
+                      }`}
+                      title="Delete email"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             );

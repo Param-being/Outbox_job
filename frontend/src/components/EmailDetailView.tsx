@@ -7,6 +7,7 @@ interface EmailDetailViewProps {
   email: ScheduledEmail;
   user: User;
   onBack: () => void;
+  onDelete?: (id: string) => Promise<void>;
   darkMode?: boolean;
 }
 
@@ -14,13 +15,30 @@ export const EmailDetailView: React.FC<EmailDetailViewProps> = ({
   email,
   user,
   onBack,
+  onDelete,
   darkMode = false,
 }) => {
+  const [isDeleting, setIsDeleting] = React.useState(false);
   const subject = email.subject || email.campaign?.subject || 'No Subject';
   const body = email.body || email.campaign?.body || '';
   const senderEmail = email.senderEmail || email.campaign?.senderEmail || user.email || 'sender@example.com';
   const senderName = senderEmail.split('@')[0].replace('.', ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   const displayTime = email.sentAt || email.scheduledAt;
+
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this email?')) return;
+    try {
+      setIsDeleting(true);
+      if (onDelete) {
+        await onDelete(email.id);
+      }
+      onBack();
+    } catch (err: any) {
+      alert(err.response?.data?.error || err.message || 'Failed to delete email');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const formattedDate = displayTime
     ? format(new Date(displayTime), 'MMM d, h:mm a')
@@ -73,9 +91,12 @@ export const EmailDetailView: React.FC<EmailDetailViewProps> = ({
             <Folder className="w-4 h-4" />
           </button>
           <button
+            onClick={handleDelete}
+            disabled={isDeleting}
             className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
               darkMode ? 'text-zinc-500 hover:text-rose-400 hover:bg-zinc-800' : 'text-gray-400 hover:text-rose-500 hover:bg-gray-100'
-            }`}
+            } disabled:opacity-50`}
+            title="Delete this email"
           >
             <Trash2 className="w-4 h-4" />
           </button>

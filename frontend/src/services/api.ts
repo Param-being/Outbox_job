@@ -64,6 +64,11 @@ export async function updateSlackWebhook(webhookUrl: string) {
   return response.data;
 }
 
+export async function deleteScheduledEmail(id: string) {
+  const response = await api.delete<{ success: boolean; message: string; id: string }>(`/emails/${id}`);
+  return response.data;
+}
+
 export async function testSlackWebhook() {
   const response = await api.post<{ success: boolean; message: string }>('/slack/test');
   return response.data;

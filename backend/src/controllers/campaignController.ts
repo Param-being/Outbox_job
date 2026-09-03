@@ -225,3 +225,45 @@ export async function getSentEmails(req: Request, res: Response) {
     return res.status(500).json({ error: error.message });
   }
 }
+
+export async function deleteEmail(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const userId = req.headers['x-user-id'] as string;
+
+    const email = await prisma.scheduledEmail.findUnique({
+      where: { id },
+    });
+
+    if (!email) {
+      return res.status(404).json({ error: 'Email not found' });
+    }
+
+    if (userId && email.userId && email.userId !== userId) {
+      return res.status(403).json({ error: 'Unauthorized to delete this email' });
+    }
+
+    // If job is in BullMQ delayed queue, remove it cleanly
+    try {
+      const job = await emailQueue.getJob(email.id);
+      if (job) {
+        await job.remove();
+      }
+    } catch (err: any) {
+      console.warn(`[Delete] Notice removing BullMQ job ${email.id}:`, err.message);
+    }
+
+    // Delete from Database
+    await prisma.scheduledEmail.delete({
+      where: { id },
+    });
+
+    return res.json({
+      success: true,
+      message: 'Email deleted successfully',
+      id,
+    });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+}
