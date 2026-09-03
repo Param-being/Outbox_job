@@ -45,6 +45,7 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
 
   // Send Later Popover State
   const [isSendLaterOpen, setIsSendLaterOpen] = useState(false);
+  const [isCustomScheduled, setIsCustomScheduled] = useState(false);
   const [scheduledStartTime, setScheduledStartTime] = useState(() => {
     const d = new Date(Date.now() + 2 * 60 * 1000);
     return d.toISOString().slice(0, 16);
@@ -59,6 +60,7 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(hours, minutes, 0, 0);
     setScheduledStartTime(tomorrow.toISOString().slice(0, 16));
+    setIsCustomScheduled(true);
   };
 
   const handleSend = async () => {
@@ -92,12 +94,16 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
 
     try {
       setSubmitting(true);
+      const targetStartTime = isCustomScheduled
+        ? new Date(scheduledStartTime).toISOString()
+        : new Date().toISOString(); // Instant send if user didn't explicitly schedule later
+
       await onSchedule({
         title: subject,
         senderEmail: fromEmail,
         subject,
         body,
-        startTime: new Date(scheduledStartTime).toISOString(),
+        startTime: targetStartTime,
         delaySeconds: Number(delaySeconds),
         hourlyLimit: Number(hourlyLimit),
         leads: combinedLeads,
@@ -219,7 +225,10 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
             <input
               type="datetime-local"
               value={scheduledStartTime}
-              onChange={(e) => setScheduledStartTime(e.target.value)}
+              onChange={(e) => {
+                setScheduledStartTime(e.target.value);
+                setIsCustomScheduled(true);
+              }}
               className={`w-full px-3 py-2 text-xs rounded-xl border focus:outline-none focus:border-emerald-500 ${
                 darkMode
                   ? 'bg-zinc-800 border-zinc-700 text-white'
