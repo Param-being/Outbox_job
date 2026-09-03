@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { User, ScheduleCampaignPayload, ScheduledEmail } from '../types';
 
-const API_BASE_URL = '/api';
+const rawApiUrl = ((import.meta as any).env?.VITE_API_URL || '').replace(/\/$/, '');
+const API_BASE_URL = rawApiUrl ? `${rawApiUrl}/api` : '/api';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
