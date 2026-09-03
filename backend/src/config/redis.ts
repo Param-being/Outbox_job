@@ -39,26 +39,15 @@ export function createRedisClient() {
 
 export async function ensureRedisRunning() {
   try {
-    const testClient = new Redis({
-      host: redisHost,
-      port: redisPort,
-      connectTimeout: 1000,
-      maxRetriesPerRequest: 1,
-      retryStrategy: () => null,
-    });
-
-    await new Promise<void>((resolve, reject) => {
-      testClient.on('connect', () => {
-        testClient.disconnect();
-        resolve();
-      });
-      testClient.on('error', (err) => {
-        testClient.disconnect();
-        reject(err);
-      });
-    });
-    console.log(`[Redis] Connected to Redis server at ${redisHost}:${redisPort}`);
+    const testClient = createRedisClient();
+    await testClient.ping();
+    testClient.disconnect();
+    console.log(`[Redis] Connected to Redis server successfully.`);
   } catch (err) {
+    if (redisUrl || (redisHost && redisHost !== '127.0.0.1')) {
+      console.error('[Redis] Failed to connect to external Redis:', (err as any).message);
+      return;
+    }
     console.log('[Redis] External Redis not found. Starting embedded Redis Memory Server on port 6379...');
     memoryServerInstance = new RedisMemoryServer({
       instance: {
