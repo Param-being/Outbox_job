@@ -45,36 +45,42 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [isLoadingSent, setIsLoadingSent] = useState(false);
   const [isSlackModalOpen, setIsSlackModalOpen] = useState(false);
 
-  const loadData = async () => {
+  const loadData = async (showLoading = false) => {
     if (!user) return;
     try {
-      setIsLoadingScheduled(true);
+      if (showLoading) setIsLoadingScheduled(true);
       const scheduledRes = await fetchScheduledEmails();
-      setScheduledEmails(scheduledRes.emails || []);
+      if (scheduledRes && scheduledRes.emails) {
+        setScheduledEmails(scheduledRes.emails);
+      }
     } catch (err) {
-      console.error('Failed to load scheduled emails', err);
+      console.warn('Silent sync notice (scheduled):', err);
     } finally {
-      setIsLoadingScheduled(false);
+      if (showLoading) setIsLoadingScheduled(false);
     }
 
     try {
-      setIsLoadingSent(true);
+      if (showLoading) setIsLoadingSent(true);
       const sentRes = await fetchSentEmails();
-      setSentEmails(sentRes.emails || []);
+      if (sentRes && sentRes.emails) {
+        setSentEmails(sentRes.emails);
+      }
     } catch (err) {
-      console.error('Failed to load sent emails', err);
+      console.warn('Silent sync notice (sent):', err);
     } finally {
-      setIsLoadingSent(false);
+      if (showLoading) setIsLoadingSent(false);
     }
   };
 
   useEffect(() => {
     if (user) {
       setAuthUserId(user.id);
-      loadData();
+      loadData(true); // Show loading only on initial load
 
-      // Poll queue updates every 8 seconds
-      const interval = setInterval(loadData, 8000);
+      // Silent background poll every 10 seconds (no screen flickering)
+      const interval = setInterval(() => {
+        loadData(false);
+      }, 10000);
       return () => clearInterval(interval);
     }
   }, [user]);
@@ -106,7 +112,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const handleScheduleCampaign = async (payload: ScheduleCampaignPayload) => {
     await createCampaign(payload);
-    await loadData();
+    await loadData(false);
     setCurrentView('list');
   };
 
@@ -116,11 +122,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   const handleDeleteEmail = async (emailId: string) => {
-    await deleteScheduledEmail(emailId);
+    // 1. Optimistically remove from state immediately (0ms UI response)
+    setScheduledEmails((prev) => prev.filter((e) => e.id !== emailId));
+    setSentEmails((prev) => prev.filter((e) => e.id !== emailId));
+    setSearchResults((prev) => prev.filter((e) => e.id !== emailId));
     if (selectedEmail?.id === emailId) {
       setSelectedEmail(null);
+      setCurrentView('list');
     }
-    await loadData();
+
+    // 2. Perform backend deletion
+    try {
+      await deleteScheduledEmail(emailId);
+    } catch (err: any) {
+      console.warn('Backend delete sync notice:', err.message);
+    }
+
+    // 3. Silent re-sync
+    await loadData(false);
   };
 
   const currentEmails = searchQuery.trim()
