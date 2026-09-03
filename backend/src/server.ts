@@ -127,21 +127,40 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Process-level safety guards
+process.on('uncaughtException', (err) => {
+  console.error('[Uncaught Exception]:', err.message || err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[Unhandled Rejection]:', reason);
+});
+
+const server = app.listen(Number(port), '0.0.0.0', () => {
+  console.log(`=======================================================`);
+  console.log(`🚀 ReachInbox Backend API listening on 0.0.0.0:${port}`);
+  console.log(`📊 Live BullMQ Board UI: http://localhost:${port}/admin/queues`);
+  console.log(`📚 Swagger API Docs: http://localhost:${port}/docs`);
+  console.log(`=======================================================`);
+});
+
 async function bootstrap() {
-  await ensureRedisRunning();
+  try {
+    await ensureRedisRunning();
+  } catch (err: any) {
+    console.error('[Bootstrap] Redis check notice:', err.message || err);
+  }
 
-  app.listen(port, async () => {
-    console.log(`=======================================================`);
-    console.log(`🚀 ReachInbox Backend API running on port ${port}`);
-    console.log(`📊 Live BullMQ Board UI: http://localhost:${port}/admin/queues`);
-    console.log(`=======================================================`);
-
-    // Sync any pending scheduled jobs from database into BullMQ delayed queue
+  try {
     await syncPendingJobsOnStartup(prisma);
+  } catch (err: any) {
+    console.error('[Bootstrap] Startup job sync notice:', err.message || err);
+  }
 
-    // Initialize Elasticsearch index asynchronously
+  try {
     await initElasticsearch();
-  });
+  } catch (err: any) {
+    console.error('[Bootstrap] Elasticsearch init notice:', err.message || err);
+  }
 }
 
 bootstrap();
