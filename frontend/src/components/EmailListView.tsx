@@ -165,11 +165,13 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
           </div>
         ) : (
           emails.map((email) => {
-            const isStarred = starredIds.has(email.id);
-            const subject = email.subject || email.campaign?.subject || 'Meeting follow-up - Scheduled';
-            const body = email.body || email.campaign?.body || 'Hi there, just wanted to follow up on our meeting...';
-            const cleanBody = body.replace(/<[^>]*>?/gm, '').replace(/\n/g, ' ');
-            const recipientName = email.recipientEmail.split('@')[0].replace('.', ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+            const isStarred = starredIds.has(email?.id);
+            const subject = email?.subject || email?.campaign?.subject || 'No Subject';
+            const body = email?.body || email?.campaign?.body || '';
+            const cleanBody = (body || '').replace(/<[^>]*>?/gm, '').replace(/\n/g, ' ');
+            const recipientEmail = email?.recipientEmail || 'lead@example.com';
+            const recipientName =
+              recipientEmail.split('@')[0]?.replace('.', ' ')?.replace(/\b\w/g, (c) => c.toUpperCase()) || 'Recipient';
 
             return (
               <div
