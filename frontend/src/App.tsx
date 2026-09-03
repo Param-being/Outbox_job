@@ -5,7 +5,7 @@ import { User } from './types';
 
 const GOOGLE_CLIENT_ID =
   (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID ||
-  '1092837465019-reachinboxsamplegoogleoauthclientid.apps.googleusercontent.com';
+  '321304066876-m99g7jd1m2nlaq7bglvuq3omhv19tqa1.apps.googleusercontent.com';
 
 export const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(() => {

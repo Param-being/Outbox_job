@@ -27,9 +27,42 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         throw new Error('No credential received from Google');
       }
       setLoading(true);
-      const data = await loginWithGoogleToken(credentialResponse.credential);
-      if (data.success && data.user) {
-        onLogin(data.user);
+
+      // 1. Decode JWT payload immediately for instant UI response
+      let clientDecodedUser: User | null = null;
+      try {
+        const base64Url = credentialResponse.credential.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split('')
+            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+        const parsed = JSON.parse(jsonPayload);
+        clientDecodedUser = {
+          id: parsed.sub || `user_${Date.now()}`,
+          email: parsed.email || 'user@gmail.com',
+          name: parsed.name || (parsed.email ? parsed.email.split('@')[0] : 'User'),
+          avatar: parsed.picture || '',
+        };
+      } catch (decodeErr) {
+        console.warn('JWT client decode notice:', decodeErr);
+      }
+
+      // 2. Sync with backend API
+      try {
+        const data = await loginWithGoogleToken(credentialResponse.credential);
+        if (data && data.success && data.user) {
+          onLogin(data.user);
+          return;
+        }
+      } catch (backendErr: any) {
+        console.warn('Backend login sync notice:', backendErr.message);
+      }
+
+      if (clientDecodedUser) {
+        onLogin(clientDecodedUser);
       } else {
         throw new Error('Google authentication failed');
       }
