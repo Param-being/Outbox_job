@@ -136,7 +136,7 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
           darkMode ? 'divide-zinc-800/60' : 'divide-gray-100'
         }`}
       >
-        {isLoading ? (
+        {isLoading && emails.length === 0 ? (
           <div className="p-6 space-y-4">
             {[1, 2, 3, 4, 5].map((n) => (
               <div key={n} className="flex items-center gap-4 animate-pulse">

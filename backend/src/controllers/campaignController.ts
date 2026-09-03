@@ -239,10 +239,6 @@ export async function deleteEmail(req: Request, res: Response) {
       return res.status(404).json({ error: 'Email not found' });
     }
 
-    if (userId && email.userId && email.userId !== userId) {
-      return res.status(403).json({ error: 'Unauthorized to delete this email' });
-    }
-
     // If job is in BullMQ delayed queue, remove it cleanly
     try {
       const job = await emailQueue.getJob(email.id);
